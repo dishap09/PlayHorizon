@@ -1,43 +1,29 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  esbuild: {
-    loader: "jsx",
-    include: /src\/.*\.jsx?$/,
-  },
-  optimizeDeps: {
-    esbuildOptions: {
-      loader: {
-        '.js': 'jsx',
-      },
-    },
-  },
   server: {
     port: 5173,
-    // Add if you need CORS
+    // Enable CORS if needed
     cors: true,
-    // Add if you need to specify host
+    // Host configuration, set to true if you want it to be accessible outside localhost
     host: true,
-    // Add proxy configuration for API requests
+    // API Proxy configuration (useful if your backend is on a different port)
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:3000',  // Replace with your backend URL
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path,
-        configure: (proxy, options) => {
-          // Add any additional proxy configuration if needed
-        }
       }
     }
   },
-  // Add if you need to specify base URL
+  // Optional: Base URL for the application (useful for deployments)
   base: '/',
-  // Add if you need to configure build options
+  // Optional: Build options
   build: {
-    outDir: 'dist',
-    sourcemap: true,
+    outDir: 'dist',  // Output directory for the build
+    sourcemap: true,  // Enable sourcemaps for easier debugging
   }
-})
+});

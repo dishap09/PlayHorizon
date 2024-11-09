@@ -1,45 +1,43 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './AuthContext';
-import { Login } from './Login';
-import { Register } from './Register';
-import { GameLibrary } from './GameLibrary';
-import { Navbar } from './Navbar';
-import { GameSearch } from './GameSearch';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import HomePage from './HomePage';  // Import HomePage component
+import LandingPage from './LandingPage';  // Import LandingPage component
+import GameDetails from './GameDetails';  // Import GameDetails component
 
-const PrivateRoute = ({ children }) => {
-  const { token } = useAuth();
-  return token ? children : <Navigate to="/login" />;
+// Simple authentication check
+const isAuthenticated = () => {
+  // Check if user is logged in (e.g., check for token in localStorage)
+  return localStorage.getItem('token') !== null;
 };
 
-export const App = () => {
+// Protected Route component
+const ProtectedRoute = ({ element }) => {
+  return isAuthenticated() ? element : <Navigate to="/" replace />;
+};
+
+const App = () => {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <div className="min-h-screen bg-gray-100">
-          <Navbar />
-          <div className="container mx-auto px-4 py-8">
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route
-                path="/library"
-                element={
-                  <PrivateRoute>
-                    <GameLibrary />
-                  </PrivateRoute>
-                }
-              />
-              <Route 
-                path="/search" 
-                element={<GameSearch />} 
-              />
-              <Route path="/" element={<Navigate to="/library" />} />
-            </Routes>
-          </div>
-        </div>
-      </BrowserRouter>
-    </AuthProvider>
+    <Router>
+      <Routes>
+        {/* Homepage route (login/signup page) */}
+        <Route 
+          path="/" 
+          element={
+              // Redirect to games page if already logged in
+            <HomePage />  // Display HomePage for login/signup
+          }
+        />
+        
+        {/* Search Page */}
+        <Route 
+          path="/search" 
+          element={<LandingPage />} 
+        />
+        
+        {/* Game Details Page */}
+        <Route path="/game/:appId" element={<GameDetails />} />
+      </Routes>
+    </Router>
   );
 };
 

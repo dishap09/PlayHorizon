@@ -452,6 +452,70 @@ app.get('/api/games/search', async (req, res) => {
     }
 });
 
+
+
+
+// API endpoint to get game details by appId
+app.get('/api/games/:appId', (req, res) => {
+  const appId = req.params.appId;
+  const query = `
+  SELECT 
+  g.app_id,
+  g.name,
+  g.release_date,
+  g.price,
+  g.dlc_count,
+  g.about_the_game,
+  g.header_image,
+  g.website,
+  g.support_url,
+  g.support_email,
+  g.metacritic_score,
+  g.user_score,
+  g.positive_reviews,
+  g.negative_reviews,
+  GROUP_CONCAT(DISTINCT dev.name) AS developers,
+  GROUP_CONCAT(DISTINCT pub.name) AS publishers,
+  GROUP_CONCAT(DISTINCT cat.name) AS categories,
+  GROUP_CONCAT(DISTINCT gen.name) AS genres,
+  GROUP_CONCAT(DISTINCT tag.name) AS tags
+FROM games g
+LEFT JOIN game_developers gd ON g.app_id = gd.app_id
+LEFT JOIN developers dev ON gd.developer_id = dev.id
+LEFT JOIN game_publishers gp ON g.app_id = gp.app_id
+LEFT JOIN publishers pub ON gp.publisher_id = pub.id
+LEFT JOIN game_categories gc ON g.app_id = gc.app_id
+LEFT JOIN categories cat ON gc.category_id = cat.id
+LEFT JOIN game_genres gg ON g.app_id = gg.app_id
+LEFT JOIN genres gen ON gg.genre_id = gen.id
+LEFT JOIN game_tags gt ON g.app_id = gt.app_id
+LEFT JOIN tags tag ON gt.tag_id = tag.id
+GROUP BY g.app_id
+ORDER BY g.release_date DESC;
+
+  `;
+  
+  connection.query(query, [appId], (err, results) => {
+    if (err) {
+      console.error('Error fetching data from the database:', err);
+      return res.status(500).send('Error fetching data');
+    }
+    
+    // If no result is found for the given appId
+    if (results.length === 0) {
+      return res.status(404).send('Game not found');
+    }
+
+    res.json(results[0]);  // Send the first result (as we're fetching by appId)
+  });
+});
+
+// Start the server
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+});
+
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
@@ -463,3 +527,5 @@ app.listen(PORT, async () => {
         process.exit(1);
     }
 });
+
+
