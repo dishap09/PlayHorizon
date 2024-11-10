@@ -20,27 +20,27 @@ body {
 /* Container for the game details */
 .game-details-container {
   width: 95%;
-  max-width: 1400px; /* Increased max-width for a wider layout */
+  max-width: 1200px;
   background: #fff;
-  border-radius: 16px; /* Slightly rounded corners */
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
-  padding: 50px;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  padding: 40px;
   overflow-y: auto;
-  height: 85vh; /* Increased height for larger content area */
+  height: 85vh;
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  gap: 20px;
   scrollbar-width: thin;
-  scrollbar-color: #1e90ff #f1f1f1; /* Custom scrollbar */
+  scrollbar-color: #1e90ff #f1f1f1;
 }
 
 .game-details-container::-webkit-scrollbar {
-  width: 10px;
+  width: 8px;
 }
 
 .game-details-container::-webkit-scrollbar-thumb {
   background-color: #1e90ff;
-  border-radius: 10px;
+  border-radius: 8px;
 }
 
 .game-details-container::-webkit-scrollbar-track {
@@ -49,28 +49,46 @@ body {
 
 /* Header (Centered Game Name) */
 h1 {
-  font-size: 3rem; /* Increased font size */
+  font-size: 2.5rem;
   color: #333;
   text-align: center;
   font-weight: 700;
-  margin-bottom: 25px; /* Added more spacing */
+  margin-bottom: 20px;
 }
 
 /* Image Styles */
 img {
   width: 100%;
-  max-width: 1000px; /* Increased max-width for larger image */
-  border-radius: 16px;
+  max-width: 1000px;
+  border-radius: 10px;
   margin: 20px 0;
   display: block;
   object-fit: cover;
 }
 
+/* Media Sections */
+.screenshots, .movies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.screenshots img,
+.movies video {
+  width: calc(50% - 10px); /* Adjusts layout for media items */
+  border-radius: 10px;
+}
+
+.movies video {
+  max-height: 200px;
+  object-fit: cover;
+}
+
 /* Game Details Section */
 p {
-  font-size: 18px; /* Increased font size */
-  line-height: 1.8;
-  margin: 12px 0;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 10px 0;
   color: #555;
 }
 
@@ -91,12 +109,12 @@ a:hover {
 
 /* Information Blocks */
 h3 {
-  font-size: 2rem; /* Increased font size */
+  font-size: 1.5rem;
   color: #444;
-  margin-top: 30px;
+  margin-top: 25px;
   font-weight: bold;
-  padding-bottom: 8px;
-  border-bottom: 3px solid #ddd;
+  padding-bottom: 5px;
+  border-bottom: 2px solid #ddd;
 }
 
 /* Tags and Categories Section */
@@ -109,10 +127,10 @@ ul li {
   display: inline-block;
   background-color: #e2e2e2;
   color: #333;
-  border-radius: 16px;
-  padding: 10px 20px; /* Increased padding */
-  margin: 8px;
-  font-size: 16px; /* Larger font size */
+  border-radius: 12px;
+  padding: 8px 15px;
+  margin: 6px;
+  font-size: 0.9rem;
   transition: all 0.3s ease;
 }
 
@@ -124,9 +142,9 @@ ul li:hover {
 /* Loading and Error Messages */
 .loading, .error {
   text-align: center;
-  font-size: 24px; /* Larger font size */
+  font-size: 1.2rem;
   color: #f44336;
-  margin-top: 30px;
+  margin-top: 20px;
   font-weight: bold;
 }
 
@@ -134,19 +152,39 @@ ul li:hover {
 a.button {
   color: #fff;
   background-color: #1e90ff;
-  padding: 14px 35px; /* Larger padding */
+  padding: 10px 25px;
   text-decoration: none;
   border-radius: 50px;
   display: inline-block;
   transition: all 0.3s ease;
   font-weight: bold;
   text-transform: uppercase;
-  margin-top: 30px;
+  margin-top: 25px;
 }
 
 a.button:hover {
   background-color: #0056b3;
   transform: translateY(-2px);
+}
+
+/* Button Style for Add to Cart and Purchase */
+button {
+  background-color: #1e90ff;
+  color: white;
+  padding: 12px 25px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  margin-top: 15px;
+  width: 48%;
+  display: inline-block;
+  text-align: center;
+}
+
+button:hover {
+  background-color: #0056b3;
 }
 
 /* Responsive Design */
@@ -156,11 +194,11 @@ a.button:hover {
   }
 
   h1 {
-    font-size: 2.5rem;
+    font-size: 2rem;
   }
 
   p, h3 {
-    font-size: 16px;
+    font-size: 0.9rem;
   }
 
   img {
@@ -168,8 +206,18 @@ a.button:hover {
   }
 
   ul li {
-    font-size: 14px;
-    padding: 8px 16px;
+    font-size: 0.8rem;
+    padding: 6px 12px;
+  }
+
+  .screenshots img,
+  .movies video {
+    width: 100%; /* Stack media items on smaller screens */
+  }
+
+  button {
+    width: 100%;
+    margin-top: 10px;
   }
 }
 
@@ -179,26 +227,22 @@ a.button:hover {
   }
 
   h1 {
-    font-size: 2rem;
+    font-size: 1.8rem;
   }
 
   p, h3 {
-    font-size: 14px;
-  }
-
-  img {
-    max-width: 100%;
+    font-size: 0.8rem;
   }
 
   ul li {
-    font-size: 12px;
-    padding: 6px 12px;
+    font-size: 0.75rem;
+    padding: 5px 10px;
   }
 }
 
 @media (max-width: 480px) {
   h1 {
-    font-size: 1.6rem;
+    font-size: 1.5rem;
   }
 
   .game-details-container {
@@ -206,11 +250,51 @@ a.button:hover {
   }
 
   ul li {
-    font-size: 12px;
-    padding: 5px 10px;
+    font-size: 0.7rem;
+    padding: 4px 8px;
   }
 
   p {
-    font-size: 14px;
+    font-size: 0.8rem;
   }
+
+  button {
+    width: 100%;
+  }
+}
+
+/* Cart Icon */
+.cart-icon {
+  position: fixed;
+  top: 20px; /* Move cart icon to top right */
+  right: 20px;
+  font-size: 2.2rem;
+  background-color: #fff;
+  border-radius: 50%;
+  padding: 15px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.cart-icon:hover {
+  transform: scale(1.1); /* Adds hover effect */
+}
+
+.cart-count {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background-color: red;
+  color: white;
+  border-radius: 50%;
+  font-size: 0.9rem;
+  padding: 3px 8px;
+}
+
+.cart-icon img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  transition: transform 0.3s ease;
 }

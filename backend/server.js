@@ -461,22 +461,10 @@ app.get('/api/games/:appId', async (req, res) => {
         const connection = await pool.getConnection();
         
         try {
-            const [results] = await connection.query(`
+            // First query: Get main game information and related entities
+            const [gameResults] = await connection.query(`
                 SELECT 
-                    g.app_id,
-                    g.name,
-                    g.release_date,
-                    g.price,
-                    g.dlc_count,
-                    g.about_the_game,
-                    g.header_image,
-                    g.website,
-                    g.support_url,
-                    g.support_email,
-                    g.metacritic_score,
-                    g.user_score,
-                    g.positive_reviews,
-                    g.negative_reviews,
+                    g.*,
                     GROUP_CONCAT(DISTINCT dev.name) AS developers,
                     GROUP_CONCAT(DISTINCT pub.name) AS publishers,
                     GROUP_CONCAT(DISTINCT cat.name) AS categories,
@@ -497,18 +485,72 @@ app.get('/api/games/:appId', async (req, res) => {
                 GROUP BY g.app_id
             `, [appId]);
 
-            if (results.length === 0) {
+            if (gameResults.length === 0) {
                 return res.status(404).json({ error: 'Game not found' });
             }
 
-            // Convert comma-separated strings to arrays
+            // Second query: Get screenshots
+            const [screenshots] = await connection.query(`
+                SELECT url
+                FROM screenshots
+                WHERE app_id = ?
+            `, [appId]);
+
+            // Third query: Get movies/trailers
+            const [movies] = await connection.query(`
+                SELECT url
+                FROM movies
+                WHERE app_id = ?
+            `, [appId]);
+
+            // Function to safely parse JSON or return empty array
+            const safeParseJSON = (jsonString) => {
+                try {
+                    // If it's already an object, return it
+                    if (typeof jsonString === 'object') return jsonString || [];
+                    // Otherwise try to parse it
+                    return JSON.parse(jsonString || '[]');
+                } catch (e) {
+                    console.warn('Failed to parse JSON:', e);
+                    return [];
+                }
+            };
+
+            // Process the game data
             const game = {
-                ...results[0],
-                developers: results[0].developers ? results[0].developers.split(',') : [],
-                publishers: results[0].publishers ? results[0].publishers.split(',') : [],
-                categories: results[0].categories ? results[0].categories.split(',') : [],
-                genres: results[0].genres ? results[0].genres.split(',') : [],
-                tags: results[0].tags ? results[0].tags.split(',') : []
+                ...gameResults[0],
+                // Handle JSON columns
+                supported_languages: safeParseJSON(gameResults[0].supported_languages),
+                full_audio_languages: safeParseJSON(gameResults[0].full_audio_languages),
+                // Convert comma-separated strings to arrays
+                developers: gameResults[0].developers ? gameResults[0].developers.split(',') : [],
+                publishers: gameResults[0].publishers ? gameResults[0].publishers.split(',') : [],
+                categories: gameResults[0].categories ? gameResults[0].categories.split(',') : [],
+                genres: gameResults[0].genres ? gameResults[0].genres.split(',') : [],
+                tags: gameResults[0].tags ? gameResults[0].tags.split(',') : [],
+                // Add media arrays
+                screenshots: screenshots.map(s => s.url),
+                movies: movies.map(m => m.url),
+                // Add computed fields
+                review_score: gameResults[0].positive_reviews + gameResults[0].negative_reviews > 0 
+                    ? Math.round((gameResults[0].positive_reviews / 
+                        (gameResults[0].positive_reviews + gameResults[0].negative_reviews)) * 100)
+                    : null,
+                // Convert boolean fields
+                windows: Boolean(gameResults[0].windows),
+                mac: Boolean(gameResults[0].mac),
+                linux: Boolean(gameResults[0].linux),
+                // Format playtime data
+                playtime: {
+                    average: {
+                        forever: Math.round(gameResults[0].average_playtime_forever / 60), // Convert to hours
+                        two_weeks: Math.round(gameResults[0].average_playtime_two_weeks / 60)
+                    },
+                    median: {
+                        forever: Math.round(gameResults[0].median_playtime_forever / 60),
+                        two_weeks: Math.round(gameResults[0].median_playtime_two_weeks / 60)
+                    }
+                }
             };
 
             res.json(game);
@@ -517,7 +559,10 @@ app.get('/api/games/:appId', async (req, res) => {
         }
     } catch (error) {
         console.error('Error fetching game details:', error);
-        res.status(500).json({ error: 'Failed to fetch game details' });
+        res.status(500).json({ 
+            error: 'Failed to fetch game details',
+            message: error.message 
+        });
     }
 });
 
@@ -534,4 +579,3 @@ app.listen(PORT, async () => {
         process.exit(1);
     }
 });
-

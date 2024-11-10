@@ -1,0 +1,98 @@
+.payment-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  h2 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+  }
+  
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .payment-method {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .payment-method input {
+    margin-right: 10px;
+  }
+  
+  .credit-card-details input,
+  .billing-details input,
+  .billing-details textarea {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+  }
+  
+  .billing-details textarea {
+    height: 80px;
+  }
+  
+  button.pay-button {
+    padding: 12px 20px;
+    background-color: #1e90ff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  button.pay-button:hover {
+    background-color: #0056b3;
+  }
+  
+  button.pay-button:disabled {
+    background-color: #aaa;
+    cursor: not-allowed;
+  }
+  
+  button.paypal-button, button.google-pay-button {
+    padding: 12px 20px;
+    background-color: #ffcc00;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  button.paypal-button:hover {
+    background-color: #ff9900;
+  }
+  
+  button.google-pay-button:hover {
+    background-color: #ff6600;
+  }
+  
+  .error {
+    color: red;
+    font-weight: bold;
+  }
+  
+  h3 {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+  }
+  
+  .billing-details {
+    margin-top: 20px;
+  }
+  
