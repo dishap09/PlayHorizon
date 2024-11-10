@@ -33,7 +33,7 @@ const GameDetails = () => {
   if (error) return <p>{error}</p>;
 
   return (
-    <div>
+    <div className="game-details-container">
       <h1>{game?.name}</h1>
       <img src={game?.header_image} alt={`${game?.name} header`} />
       <p><strong>About the Game:</strong> {game?.about_the_game}</p>

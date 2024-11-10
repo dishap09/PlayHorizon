@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
-import { Link } from 'react-router-dom';  // Import Link from react-router-dom
-import './LandingPage.css'; // Import the CSS file
+import { Link } from 'react-router-dom';
+import './LandingPage.css';
 
 export const LandingPage = () => {
   const [query, setQuery] = useState('');
@@ -9,13 +9,8 @@ export const LandingPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Simulated logged-in user data (You can fetch this from your backend)
-  const user = {
-    email: 'user@mail.com', // Example user email
-    profilePic: '', // Optional profile pic URL
-  };
-
-  const username = user.email.split('@')[0]; // Extract username from email
+  // Retrieve email from localStorage
+  const userEmail = localStorage.getItem('userEmail') || 'Guest';
 
   const searchGames = async (searchQuery) => {
     if (!searchQuery?.trim()) {
@@ -28,9 +23,7 @@ export const LandingPage = () => {
 
     try {
       const response = await fetch(`/api/games/search?query=${encodeURIComponent(searchQuery)}`, {
-        headers: {
-          'Accept': 'application/json',
-        },
+        headers: { 'Accept': 'application/json' },
       });
 
       const contentType = response.headers.get('content-type');
@@ -39,29 +32,19 @@ export const LandingPage = () => {
       }
 
       const data = await response.json();
+      if (!response.ok) throw new Error(data.error || `Server error: ${response.status}`);
 
-      if (!response.ok) {
-        throw new Error(data.error || `Server error: ${response.status}`);
-      }
-
-      if (!Array.isArray(data?.games)) {
-        throw new Error('Invalid response format');
-      }
+      if (!Array.isArray(data?.games)) throw new Error('Invalid response format');
 
       setGames(data.games);
     } catch (err) {
       console.error('Search error:', err);
-      setError(
-        err.message === 'Failed to fetch'
-          ? 'Unable to connect to the server. Please check your internet connection.'
-          : 'Failed to search games. Please try again.'
-      );
+      setError(err.message === 'Failed to fetch' ? 'Unable to connect to the server. Please check your internet connection.' : 'Failed to search games. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Debounce search with cleanup
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setQuery(value);
@@ -75,20 +58,14 @@ export const LandingPage = () => {
 
   return (
     <div className="landing-page">
-      {/* Header Section */}
       <div className="header">
         <div className="user-profile">
           <div className="profile-pic">
-            {user.profilePic ? (
-              <img src={user.profilePic} alt="Profile" />
-            ) : (
-              <div className="no-profile-pic"></div>
-            )}
+            {/* Optional: Add profile picture here if available */}
           </div>
-          <span className="email">{user.email}</span> {/* Email displayed beside profile pic */}
+          <span className="email">{userEmail}</span> {/* Display user's email */}
         </div>
 
-        {/* Search Bar */}
         <div className="search-container">
           <div className="search-bar">
             <div className="search-icon">
@@ -106,21 +83,18 @@ export const LandingPage = () => {
         </div>
       </div>
 
-      {/* Loading State */}
       {loading && (
         <div className="loading" role="status" aria-label="Loading">
           <div className="spinner"></div>
         </div>
       )}
 
-      {/* Error State */}
       {error && (
         <div className="error" role="alert">
           {error}
         </div>
       )}
 
-      {/* Game Results Section (Scrollable) */}
       <div className="game-results">
         {games.length === 0 && !loading && query && (
           <div className="no-results">
@@ -131,7 +105,7 @@ export const LandingPage = () => {
           {games.map((game) => (
             <Link
               key={game.app_id}
-              to={`/game/${game.app_id}`}  // Link to the GameDetails page
+              to={`/game/${game.app_id}`}
               className="game-card"
             >
               <div className="game-card-inner">
@@ -148,7 +122,6 @@ export const LandingPage = () => {
                 </div>
                 <div className="game-details">
                   <h2 className="game-name">{game.name}</h2>
-
                   <div className="game-pricing">
                     <span className="game-price">
                       {typeof game.price === 'number'
@@ -157,14 +130,12 @@ export const LandingPage = () => {
                           : 'Free'
                         : 'Price unavailable'}
                     </span>
-
                     {game.metacritic_score && (
                       <span className={`game-metacritic ${game.metacritic_score >= 75 ? 'green' : game.metacritic_score >= 50 ? 'yellow' : 'red'}`}>
                         {game.metacritic_score}
                       </span>
                     )}
                   </div>
-
                   <div className="game-info">
                     <p className="release-date">
                       Release Date: {game.release_date ? new Date(game.release_date).toLocaleDateString() : 'Unknown'}
@@ -180,7 +151,6 @@ export const LandingPage = () => {
                       </p>
                     )}
                   </div>
-
                   <div className="game-genres">
                     {Array.isArray(game.genres) && game.genres.length > 0 && (
                       <div className="genres-list">
@@ -190,7 +160,6 @@ export const LandingPage = () => {
                       </div>
                     )}
                   </div>
-
                   {Array.isArray(game.developers) && game.developers.length > 0 && (
                     <p className="game-developers">
                       Developer: {game.developers.join(', ')}

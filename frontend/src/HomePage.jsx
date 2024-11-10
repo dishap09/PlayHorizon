@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, LogIn, UserPlus, GamepadIcon } from 'lucide-react';
-import './HomePage.css'; // Import the CSS file
+import './HomePage.css';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -12,7 +12,9 @@ const HomePage = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
+      const email = e.target.elements.email.value;
       localStorage.setItem('token', 'dummy-token');
+      localStorage.setItem('userEmail', email); // Store the email in localStorage
       setShowLogin(false);
       navigate('/search');
     } catch (err) {
@@ -33,41 +35,29 @@ const HomePage = () => {
 
   return (
     <div className="home-container">
-      {/* Animated background blobs */}
       <div className="blob"></div>
       <div className="blob"></div>
       <div className="blob"></div>
 
-      {/* Main content */}
       <div className="home-content">
         <div className="home-header">
           <GamepadIcon size={48} className="icon" />
           <h1>PlayHorizon</h1>
         </div>
         
-        <p className="home-description">
-          Your gateway to endless gaming adventures
-        </p>
+        <p className="home-description">Your gateway to endless gaming adventures</p>
 
         <div className="button-container">
-          <button
-            onClick={() => setShowLogin(true)}
-            className="btn"
-          >
+          <button onClick={() => setShowLogin(true)} className="btn">
             <LogIn className="btn-icon" />
             <span>Login</span>
-            <div className="underline"></div>
           </button>
-          <button
-            onClick={() => setShowSignup(true)}
-            className="btn"
-          >
+          <button onClick={() => setShowSignup(true)} className="btn">
             <UserPlus className="btn-icon" />
             <span>Sign Up</span>
           </button>
         </div>
 
-        {/* Login Modal */}
         {showLogin && (
           <div className="modal-backdrop">
             <div className="modal-content">
@@ -79,28 +69,15 @@ const HomePage = () => {
                 <p>Enter your credentials to continue</p>
               </div>
               <form onSubmit={handleLogin} className="modal-form">
-                <input
-                  type="email"
-                  required
-                  placeholder="name@example.com"
-                />
-                <input
-                  type="password"
-                  required
-                  placeholder="Enter your password"
-                />
-                {error && (
-                  <div className="modal-error">
-                    {error}
-                  </div>
-                )}
+                <input type="email" name="email" required placeholder="name@example.com" />
+                <input type="password" required placeholder="Enter your password" />
+                {error && <div className="modal-error">{error}</div>}
                 <button type="submit">Sign in</button>
               </form>
             </div>
           </div>
         )}
 
-        {/* Signup Modal */}
         {showSignup && (
           <div className="modal-backdrop">
             <div className="modal-content">
@@ -112,26 +89,10 @@ const HomePage = () => {
                 <p>Join the PlayHorizon</p>
               </div>
               <form onSubmit={handleSignup} className="modal-form">
-                <input
-                  type="email"
-                  required
-                  placeholder="name@example.com"
-                />
-                <input
-                  type="password"
-                  required
-                  placeholder="Enter your password"
-                />
-                <input
-                  type="password"
-                  required
-                  placeholder="Confirm your password"
-                />
-                {error && (
-                  <div className="modal-error">
-                    {error}
-                  </div>
-                )}
+                <input type="email" required placeholder="name@example.com" />
+                <input type="password" required placeholder="Enter your password" />
+                <input type="password" required placeholder="Confirm your password" />
+                {error && <div className="modal-error">{error}</div>}
                 <button type="submit">Sign up for PlayHorizon</button>
               </form>
             </div>

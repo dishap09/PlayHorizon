@@ -1,111 +1,216 @@
-/* GameDetails.css */
-.game-details-page {
-    font-family: 'Arial', sans-serif;
-    background-color: #f4f4f4;
-    color: #333;
-    padding: 20px;
-  }
-  
+/* General Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+body {
+  background: #f7f7f7;
+  color: #333;
+  padding: 0;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* Container for the game details */
+.game-details-container {
+  width: 95%;
+  max-width: 1400px; /* Increased max-width for a wider layout */
+  background: #fff;
+  border-radius: 16px; /* Slightly rounded corners */
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+  padding: 50px;
+  overflow-y: auto;
+  height: 85vh; /* Increased height for larger content area */
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  scrollbar-width: thin;
+  scrollbar-color: #1e90ff #f1f1f1; /* Custom scrollbar */
+}
+
+.game-details-container::-webkit-scrollbar {
+  width: 10px;
+}
+
+.game-details-container::-webkit-scrollbar-thumb {
+  background-color: #1e90ff;
+  border-radius: 10px;
+}
+
+.game-details-container::-webkit-scrollbar-track {
+  background-color: #f1f1f1;
+}
+
+/* Header (Centered Game Name) */
+h1 {
+  font-size: 3rem; /* Increased font size */
+  color: #333;
+  text-align: center;
+  font-weight: 700;
+  margin-bottom: 25px; /* Added more spacing */
+}
+
+/* Image Styles */
+img {
+  width: 100%;
+  max-width: 1000px; /* Increased max-width for larger image */
+  border-radius: 16px;
+  margin: 20px 0;
+  display: block;
+  object-fit: cover;
+}
+
+/* Game Details Section */
+p {
+  font-size: 18px; /* Increased font size */
+  line-height: 1.8;
+  margin: 12px 0;
+  color: #555;
+}
+
+strong {
+  color: #2a2a2a;
+  font-weight: 600;
+}
+
+a {
+  color: #1e90ff;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: #0056b3;
+}
+
+/* Information Blocks */
+h3 {
+  font-size: 2rem; /* Increased font size */
+  color: #444;
+  margin-top: 30px;
+  font-weight: bold;
+  padding-bottom: 8px;
+  border-bottom: 3px solid #ddd;
+}
+
+/* Tags and Categories Section */
+ul {
+  list-style: none;
+  margin-top: 10px;
+}
+
+ul li {
+  display: inline-block;
+  background-color: #e2e2e2;
+  color: #333;
+  border-radius: 16px;
+  padding: 10px 20px; /* Increased padding */
+  margin: 8px;
+  font-size: 16px; /* Larger font size */
+  transition: all 0.3s ease;
+}
+
+ul li:hover {
+  background-color: #1e90ff;
+  color: #fff;
+}
+
+/* Loading and Error Messages */
+.loading, .error {
+  text-align: center;
+  font-size: 24px; /* Larger font size */
+  color: #f44336;
+  margin-top: 30px;
+  font-weight: bold;
+}
+
+/* Button Style for Links */
+a.button {
+  color: #fff;
+  background-color: #1e90ff;
+  padding: 14px 35px; /* Larger padding */
+  text-decoration: none;
+  border-radius: 50px;
+  display: inline-block;
+  transition: all 0.3s ease;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-top: 30px;
+}
+
+a.button:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
   .game-details-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+  }
+
+  p, h3 {
+    font-size: 16px;
+  }
+
+  img {
+    max-width: 90%;
+  }
+
+  ul li {
+    font-size: 14px;
+    padding: 8px 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .game-details-container {
     padding: 20px;
   }
-  
-  .game-details-header {
-    display: flex;
-    margin-bottom: 20px;
+
+  h1 {
+    font-size: 2rem;
   }
-  
-  .game-details-image {
-    width: 300px;
-    height: 200px;
-    object-fit: cover;
-    border-radius: 8px;
+
+  p, h3 {
+    font-size: 14px;
   }
-  
-  .game-title-info {
-    margin-left: 20px;
+
+  img {
+    max-width: 100%;
   }
-  
-  .game-title {
-    font-size: 2.5rem;
-    font-weight: bold;
+
+  ul li {
+    font-size: 12px;
+    padding: 6px 12px;
   }
-  
-  .game-price {
-    font-size: 1.2rem;
-    color: #007bff;
+}
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: 1.6rem;
   }
-  
-  .game-metacritic {
-    margin-top: 10px;
+
+  .game-details-container {
+    padding: 15px;
   }
-  
-  .metacritic-badge {
+
+  ul li {
+    font-size: 12px;
     padding: 5px 10px;
-    border-radius: 8px;
-    font-size: 1rem;
-    color: white;
   }
-  
-  .metacritic-badge.green {
-    background-color: #4caf50;
+
+  p {
+    font-size: 14px;
   }
-  
-  .metacritic-badge.yellow {
-    background-color: #ffeb3b;
-    color: #333;
-  }
-  
-  .metacritic-badge.red {
-    background-color: #f44336;
-  }
-  
-  .game-info {
-    margin-top: 20px;
-  }
-  
-  .genre-badge {
-    background-color: #e0e0e0;
-    color: #333;
-    padding: 5px 10px;
-    margin: 5px;
-    border-radius: 4px;
-    font-size: 1rem;
-  }
-  
-  .purchase-button {
-    background-color: #ff407e;
-    color: white;
-    padding: 12px 30px;
-    font-size: 1.2rem;
-    border: none;
-    border-radius: 50px;
-    cursor: pointer;
-    margin-top: 20px;
-    transition: background-color 0.3s;
-  }
-  
-  .purchase-button:hover {
-    background-color: #e6366d;
-  }
-  
-  .back-button {
-    background-color: #ccc;
-    color: #333;
-    padding: 10px 20px;
-    font-size: 1rem;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-bottom: 20px;
-  }
-  
-  .back-button:hover {
-    background-color: #bbb;
-  }
-  
+}
