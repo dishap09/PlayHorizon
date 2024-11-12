@@ -632,6 +632,299 @@ app.get('/api/games/:appId', async (req, res) => {
     }
 });
 
+const isAdmin = async (req, res, next) => {
+    try {
+        const connection = await pool.getConnection();
+        const [users] = await connection.query(
+            'SELECT role FROM users WHERE id = ?',
+            [req.user.userId]
+        );
+        connection.release();
+
+        if (users.length === 0 || users[0].role !== 'admin') {
+            return res.status(403).json({ error: 'Admin access required' });
+        }
+        next();
+    } catch (error) {
+        res.status(500).json({ error: 'Authorization check failed' });
+    }
+};
+
+// Create new game (Admin only)
+app.post('/api/games', authenticateToken, isAdmin, async (req, res) => {
+    const {
+        app_id,
+        name,
+        release_date,
+        price,
+        header_image,
+        metacritic_score,
+        about_the_game
+    } = req.body;
+
+    try {
+        const connection = await pool.getConnection();
+        
+        try {
+            await connection.beginTransaction();
+
+            await connection.query(`
+                INSERT INTO games (
+                    app_id, name, release_date, price,
+                    header_image, metacritic_score, about_the_game
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            `, [app_id, name, release_date, price, header_image, metacritic_score, about_the_game]);
+
+            await connection.commit();
+            res.status(201).json({ message: 'Game created successfully' });
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        console.error('Error creating game:', error);
+        res.status(500).json({ error: 'Failed to create game' });
+    }
+});
+
+// Update game (Admin only)
+// Update game (Admin only)
+app.put('/api/games/:appId', authenticateToken, isAdmin, async (req, res) => {
+    const { appId } = req.params;
+    const {
+        // Main game info
+        name,
+        release_date,
+        price,
+        header_image,
+        metacritic_score,
+        about_the_game,
+        supported_languages,
+        full_audio_languages,
+        windows,
+        mac,
+        linux,
+        // Related data arrays
+        developers,
+        publishers,
+        categories,
+        genres,
+        tags,
+        screenshots,
+        movies
+    } = req.body;
+
+    try {
+        const connection = await pool.getConnection();
+        
+        try {
+            await connection.beginTransaction();
+
+            // 1. Update main game information
+            const [updateResult] = await connection.query(`
+                UPDATE games
+                SET 
+                    name = ?,
+                    release_date = ?,
+                    price = ?,
+                    header_image = ?,
+                    metacritic_score = ?,
+                    about_the_game = ?,
+                    supported_languages = ?,
+                    full_audio_languages = ?,
+                    windows = ?,
+                    mac = ?,
+                    linux = ?
+                WHERE app_id = ?
+            `, [
+                name,
+                release_date,
+                price,
+                header_image,
+                metacritic_score,
+                about_the_game,
+                JSON.stringify(supported_languages || []),
+                JSON.stringify(full_audio_languages || []),
+                windows || false,
+                mac || false,
+                linux || false,
+                appId
+            ]);
+
+            if (updateResult.affectedRows === 0) {
+                await connection.rollback();
+                return res.status(404).json({ error: 'Game not found' });
+            }
+
+            // Helper function to update related items
+            async function updateRelatedItems(tableName, items, itemType) {
+                // Delete existing relationships
+                await connection.query(`DELETE FROM ${tableName} WHERE app_id = ?`, [appId]);
+                
+                if (items && items.length > 0) {
+                    // Get or create items and their IDs
+                    const values = await Promise.all(items.map(async (item) => {
+                        const [rows] = await connection.query(
+                            `INSERT IGNORE INTO ${itemType} (name) VALUES (?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)`,
+                            [item]
+                        );
+                        const [idResult] = await connection.query(
+                            `SELECT id FROM ${itemType} WHERE name = ?`,
+                            [item]
+                        );
+                        return idResult[0].id;
+                    }));
+
+                    // Create new relationships
+                    const relationshipValues = values.map(id => [appId, id]);
+                    if (relationshipValues.length > 0) {
+                        const idColumn = itemType.slice(0, -1) + '_id'; // Remove 's' and add '_id'
+                        await connection.query(
+                            `INSERT INTO ${tableName} (app_id, ${idColumn}) VALUES ?`,
+                            [relationshipValues]
+                        );
+                    }
+                }
+            }
+
+            // 2. Update all related data
+            if (developers) {
+                await updateRelatedItems('game_developers', developers, 'developers');
+            }
+            if (publishers) {
+                await updateRelatedItems('game_publishers', publishers, 'publishers');
+            }
+            if (categories) {
+                await updateRelatedItems('game_categories', categories, 'categories');
+            }
+            if (genres) {
+                await updateRelatedItems('game_genres', genres, 'genres');
+            }
+            if (tags) {
+                await updateRelatedItems('game_tags', tags, 'tags');
+            }
+
+            // 3. Update screenshots
+            if (screenshots) {
+                await connection.query('DELETE FROM screenshots WHERE app_id = ?', [appId]);
+                if (screenshots.length > 0) {
+                    const screenshotValues = screenshots.map(url => [appId, url]);
+                    await connection.query(
+                        'INSERT INTO screenshots (app_id, url) VALUES ?',
+                        [screenshotValues]
+                    );
+                }
+            }
+
+            // 4. Update movies/trailers
+            if (movies) {
+                await connection.query('DELETE FROM movies WHERE app_id = ?', [appId]);
+                if (movies.length > 0) {
+                    const movieValues = movies.map(url => [appId, url]);
+                    await connection.query(
+                        'INSERT INTO movies (app_id, url) VALUES ?',
+                        [movieValues]
+                    );
+                }
+            }
+
+            await connection.commit();
+            res.json({ 
+                message: 'Game and related data updated successfully',
+                updatedGameId: appId
+            });
+
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        console.error('Error updating game:', error);
+        res.status(500).json({ 
+            error: 'Failed to update game',
+            message: error.message,
+            details: 'An error occurred while updating the game and its related data'
+        });
+    }
+});
+// Delete game (Admin only)
+// Delete game (Admin only)
+app.delete('/api/games/:appId', authenticateToken, isAdmin, async (req, res) => {
+    const { appId } = req.params;
+
+    try {
+        const connection = await pool.getConnection();
+        
+        try {
+            await connection.beginTransaction();
+
+            // Delete from all related tables first
+            await connection.query('DELETE FROM game_categories WHERE app_id = ?', [appId]);
+            await connection.query('DELETE FROM game_developers WHERE app_id = ?', [appId]);
+            await connection.query('DELETE FROM game_publishers WHERE app_id = ?', [appId]);
+            await connection.query('DELETE FROM game_genres WHERE app_id = ?', [appId]);
+            await connection.query('DELETE FROM game_tags WHERE app_id = ?', [appId]);
+            await connection.query('DELETE FROM screenshots WHERE app_id = ?', [appId]);
+            await connection.query('DELETE FROM movies WHERE app_id = ?', [appId]);
+            await connection.query('DELETE FROM user_games WHERE app_id = ?', [appId]);
+
+            // Finally, delete the game itself
+            const [result] = await connection.query(
+                'DELETE FROM games WHERE app_id = ?',
+                [appId]
+            );
+
+            if (result.affectedRows === 0) {
+                await connection.rollback();
+                return res.status(404).json({ error: 'Game not found' });
+            }
+
+            await connection.commit();
+            res.json({ 
+                message: 'Game and all related data deleted successfully',
+                deletedGameId: appId
+            });
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        console.error('Error deleting game:', error);
+        res.status(500).json({ 
+            error: 'Failed to delete game',
+            message: error.message,
+            details: 'An error occurred while deleting the game and its related data'
+        });
+    }
+});
+
+// Get current user info with role
+app.get('/api/users/me', authenticateToken, async (req, res) => {
+    try {
+        const connection = await pool.getConnection();
+        const [users] = await connection.query(
+            'SELECT id, username, role FROM users WHERE id = ?',
+            [req.user.userId]
+        );
+        connection.release();
+
+        if (users.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.json(users[0]);
+    } catch (error) {
+        console.error('Error fetching user:', error);
+        res.status(500).json({ error: 'Failed to fetch user information' });
+    }
+});
+
 
 
 // Start server

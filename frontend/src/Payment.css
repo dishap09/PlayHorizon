@@ -1,98 +1,206 @@
+/* General Page Styles */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Roboto', sans-serif;
+  background-color: #f0f2f5;
+}
+
+/* General Container Styles */
 .payment-container {
-    max-width: 600px;
-    margin: 0 auto;
+  max-width: 700px;
+  max-height: 80vh; /* Limits height to 80% of viewport */
+  overflow-y: auto; /* Adds vertical scroll within container */
+  margin: 30px auto;
+  padding: 30px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Title Styles */
+h2 {
+  font-size: 2.5rem;
+  margin-bottom: 30px;
+  color: #333;
+  text-align: center;
+}
+
+/* Purchase Summary Section */
+.purchase-summary {
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+}
+
+.purchase-summary h3 {
+  font-size: 1.7rem;
+  color: #333;
+  margin-bottom: 20px;
+  text-align: center;
+  font-weight: 500;
+}
+
+.game-info {
+  text-align: center;
+  margin-top: 15px;
+}
+
+.game-info h4 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.game-info p {
+  font-size: 1.2rem;
+  color: #555;
+}
+
+/* Form Styles */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.payment-method {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px;
+  background-color: #f1f1f1;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.payment-method label {
+  font-size: 1.1rem;
+  color: #333;
+  cursor: pointer;
+}
+
+.payment-method input {
+  margin-right: 10px;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+/* Input Fields */
+.credit-card-details input,
+.billing-details input,
+.billing-details textarea {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  background-color: #f9f9f9;
+  transition: border 0.3s ease-in-out;
+}
+
+.credit-card-details input:focus,
+.billing-details input:focus,
+.billing-details textarea:focus {
+  border-color: #1e90ff;
+  outline: none;
+  background-color: #ffffff;
+}
+
+.billing-details textarea {
+  height: 100px;
+  resize: none;
+  color: black;
+}
+
+/* Button Styles */
+button.pay-button {
+  padding: 14px 24px;
+  background-color: #1e90ff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease-in-out;
+  width: 100%;
+  margin-top: 20px;
+}
+
+button.pay-button:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
+button.pay-button:disabled {
+  background-color: #aaa;
+  cursor: not-allowed;
+  transform: translateY(0);
+}
+
+/* PayPal and Google Pay Buttons */
+button.paypal-button,
+button.google-pay-button {
+  padding: 14px 24px;
+  background-color: #ffcc00;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease-in-out;
+  width: 100%;
+}
+
+button.paypal-button:hover {
+  background-color: #ff9900;
+  transform: translateY(-2px);
+}
+
+button.google-pay-button:hover {
+  background-color: #ff6600;
+  transform: translateY(-2px);
+}
+
+/* Error Message */
+.error {
+  color: red;
+  font-weight: bold;
+  font-size: 1.1rem;
+  margin-top: 10px;
+  text-align: center;
+}
+
+/* Billing Details Section */
+.billing-details {
+  margin-top: 25px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .payment-container {
     padding: 20px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    max-width: 90%;
+    max-height: 90vh; /* Adjusts max height for smaller screens */
   }
-  
+
   h2 {
     font-size: 2rem;
-    margin-bottom: 20px;
   }
-  
-  form {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+
+  .purchase-summary h3 {
+    font-size: 1.4rem;
   }
-  
-  .payment-method {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+
+  .game-info h4 {
+    font-size: 1.1rem;
   }
-  
-  .payment-method input {
-    margin-right: 10px;
-  }
-  
-  .credit-card-details input,
-  .billing-details input,
-  .billing-details textarea {
-    width: 100%;
-    padding: 10px;
-    margin: 5px 0;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    font-size: 1rem;
-  }
-  
-  .billing-details textarea {
-    height: 80px;
-  }
-  
+
   button.pay-button {
-    padding: 12px 20px;
-    background-color: #1e90ff;
-    color: white;
-    border: none;
-    border-radius: 5px;
     font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
   }
-  
-  button.pay-button:hover {
-    background-color: #0056b3;
-  }
-  
-  button.pay-button:disabled {
-    background-color: #aaa;
-    cursor: not-allowed;
-  }
-  
-  button.paypal-button, button.google-pay-button {
-    padding: 12px 20px;
-    background-color: #ffcc00;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  
-  button.paypal-button:hover {
-    background-color: #ff9900;
-  }
-  
-  button.google-pay-button:hover {
-    background-color: #ff6600;
-  }
-  
-  .error {
-    color: red;
-    font-weight: bold;
-  }
-  
-  h3 {
-    font-size: 1.2rem;
-    margin-bottom: 10px;
-  }
-  
-  .billing-details {
-    margin-top: 20px;
-  }
-  
+}

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';  // Import useLocation hook
 import './Payment.css';
 
-const Payment = ({ game }) => {  // Receive game prop
+const Payment = () => {
+  const { state } = useLocation();  // Access the state passed from the GameDetails page
   const [paymentMethod, setPaymentMethod] = useState('credit-card');
   const [cardDetails, setCardDetails] = useState({
     cardNumber: '',
@@ -15,6 +17,9 @@ const Payment = ({ game }) => {  // Receive game prop
   });
   const [error, setError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Destructure the game and price from the state
+  const { game, price } = state || {};
 
   const handleCardChange = (e) => {
     const { name, value } = e.target;
@@ -36,22 +41,10 @@ const Payment = ({ game }) => {  // Receive game prop
     setPaymentMethod(e.target.value);
   };
 
-  const addToLibrary = () => {
-    const library = JSON.parse(localStorage.getItem('library')) || [];
-    if (!library.some((libGame) => libGame.app_id === game.app_id)) {  // Prevent duplicates
-      library.push(game);  // Add the purchased game to the library
-      localStorage.setItem('library', JSON.stringify(library));
-    }
-  };
-
-  const handlePaymentSuccess = () => {
+  const handlePaymentSuccess = async () => {
     setIsProcessing(false);
     alert('Payment Successful!');
-    addToLibrary();  // Add the purchased game to the library
-
-    // Reset form
-    setCardDetails({ cardNumber: '', expiryDate: '', cvv: '' });
-    setBillingDetails({ name: '', email: '', address: '' });
+    addToLibrary();
   };
 
   const handleSubmit = (e) => {
@@ -68,14 +61,25 @@ const Payment = ({ game }) => {  // Receive game prop
     }
 
     setIsProcessing(true);
-    setTimeout(handlePaymentSuccess, 2000);  // Simulate payment processing
+    setTimeout(handlePaymentSuccess, 2000);
   };
 
   return (
     <div className="payment-container">
-      <h2>Payment Page</h2>
+     
+
+      {/* Purchase Summary Section */}
+      {game && (
+        <div className="purchase-summary">
+          <h3>Order Summary</h3>
+          <div className="game-info">
+            <h4>Game: {game.name}</h4>
+            <p><strong>Price: </strong>${price}</p>
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit}>
-        {/* Payment Method Selection */}
         <div className="payment-method">
           <label>
             <input
@@ -106,7 +110,6 @@ const Payment = ({ game }) => {  // Receive game prop
           </label>
         </div>
 
-        {/* Conditional Payment Fields */}
         {paymentMethod === 'credit-card' && (
           <div className="credit-card-details">
             <input type="text" name="cardNumber" placeholder="Card Number" value={cardDetails.cardNumber} onChange={handleCardChange} maxLength="19" />
@@ -115,7 +118,6 @@ const Payment = ({ game }) => {  // Receive game prop
           </div>
         )}
 
-        {/* Billing Information */}
         <div className="billing-details">
           <input type="text" name="name" placeholder="Full Name" value={billingDetails.name} onChange={handleBillingChange} />
           <input type="email" name="email" placeholder="Email" value={billingDetails.email} onChange={handleBillingChange} />

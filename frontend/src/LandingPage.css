@@ -166,10 +166,10 @@
 /* Game Results Section */
 .game-results {
   width: 100vw;
-  margin-top: 0;
+  margin: 100px 0px;
   padding: 20px;
   overflow-y: auto;
-  height: calc(100vh - 80px); /* Full screen height minus header */
+  height: auto; /* Full screen height minus header */
   background-color: #000000; /* Set game results background to white */
   overflow-y: auto;
 }
@@ -280,6 +280,7 @@
 }
 
 .pagination {
+  margin-top: 20px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -310,3 +311,5 @@
   cursor: pointer;
   font-size: 16px;
 }
+
+

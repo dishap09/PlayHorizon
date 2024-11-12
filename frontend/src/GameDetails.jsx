@@ -3,14 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import './GameDetails.css';
 
 const GameDetails = () => {
-  const { appId } = useParams(); // Extract appId from the URL
+  const { appId } = useParams();
   const [game, setGame] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const navigate = useNavigate(); // Use useNavigate to get the navigate function
+  const navigate = useNavigate();
 
   useEffect(() => {
-    console.log('App ID:', appId); // Log to check if appId is correctly retrieved
+    console.log('App ID:', appId);
 
     if (appId) {
       fetch(`/api/games/${appId}`)
@@ -21,7 +21,7 @@ const GameDetails = () => {
         })
         .catch((err) => {
           console.error(err);
-          setError('Error fetching game details');
+          setError(`Error fetching game details: ${err.message}`);
           setLoading(false);
         });
     } else {
@@ -31,9 +31,9 @@ const GameDetails = () => {
   }, [appId]);
 
   const handlePurchase = () => {
-    // Navigate to a payment page
-    navigate('/payment'); // You can set this path to the actual payment page
+    navigate('/payment', { state: { game, price: game?.price } });
   };
+  
 
   if (loading) return <p>Loading game details...</p>;
   if (error) return <p>{error}</p>;
@@ -42,6 +42,12 @@ const GameDetails = () => {
     <div className="game-details-container">
       <h1>{game?.name}</h1>
       <img src={game?.header_image} alt={`${game?.name} header`} />
+      
+      {/* Move Purchase button below the image */}
+      <div className="buttons">
+        <button onClick={handlePurchase} className="purchase-button">Purchase</button>
+      </div>
+
       <p><strong>About the Game:</strong> {game?.about_the_game}</p>
       <p><strong>Release Date:</strong> {game?.release_date}</p>
       <p><strong>Price:</strong> ${game?.price}</p>
@@ -50,11 +56,6 @@ const GameDetails = () => {
       <p><strong>User Score:</strong> {game?.review_score}%</p>
       <p><strong>Positive Reviews:</strong> {game?.positive_reviews}</p>
       <p><strong>Negative Reviews:</strong> {game?.negative_reviews}</p>
-
-      {/* Purchase button only */}
-      <div className="buttons">
-        <button onClick={handlePurchase} className="purchase-button">Purchase</button>
-      </div>
 
       <h3>Developers</h3>
       <p>{game?.developers.join(', ')}</p>

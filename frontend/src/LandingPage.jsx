@@ -1,17 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import { CloudCog, Search } from 'lucide-react';
+import { Search, User2Icon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import './LandingPage.css';
+
+const formatPrice = (price) => {
+  // Handle empty strings, null, and undefined
+  if (price === '' || price === null || price === undefined) {
+    return 'Price unavailable';
+  }
+  
+  // If price is already a number, use it directly
+  // Otherwise, try to convert from string
+  const numericPrice = typeof price === 'number' ? price : parseFloat(price);
+  
+  // Check if conversion was successful
+  if (isNaN(numericPrice)) {
+    return 'Price unavailable';
+  }
+  
+  // Handle free games
+  if (numericPrice === 0) {
+    return 'Free';
+  }
+  
+  // Format price with 2 decimal places
+  return `$${numericPrice.toFixed(2)}`;
+};
 
 export const LandingPage = () => {
   const [query, setQuery] = useState('');
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1); // Track the current page
+  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Retrieve email from localStorage
   const userEmail = localStorage.getItem('userEmail') || 'Guest';
 
   const fetchGames = async (page = 1) => {
@@ -23,18 +46,26 @@ export const LandingPage = () => {
         headers: { 'Accept': 'application/json' },
       });
 
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         throw new Error('Server returned non-JSON response');
       }
 
       const data = await response.json();
-      console.log("frontend", data)
-      if (!response.ok) throw new Error(data.error || `Server error: ${response.status}`);
 
-      const totalPagesCount = data.pagination.totalCount / 10
+      const totalPagesCount = Math.ceil(data.pagination.totalCount / 24);
 
-      setGames(data.games || []);
+      // Process games data to ensure consistent price format
+      const processedGames = data.games.map(game => ({
+        ...game,
+        formattedPrice: formatPrice(game.price)
+      }));
+
+      setGames(processedGames);
       setTotalPages(totalPagesCount);
     } catch (err) {
       console.error('Fetch error:', err);
@@ -43,11 +74,6 @@ export const LandingPage = () => {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-      console.log("pageNumber", currentPage)
-      fetchGames(currentPage);
-  }, [currentPage]);
 
   const searchGames = async (searchQuery) => {
     if (!searchQuery?.trim()) {
@@ -63,25 +89,42 @@ export const LandingPage = () => {
         headers: { 'Accept': 'application/json' },
       });
 
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         throw new Error('Server returned non-JSON response');
       }
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || `Server error: ${response.status}`);
 
-      if (!Array.isArray(data?.games)) throw new Error('Invalid response format');
+      if (!Array.isArray(data?.games)) {
+        throw new Error('Invalid response format');
+      }
 
-      setGames(data.games);
+      // Process search results to ensure consistent price format
+      const processedGames = data.games.map(game => ({
+        ...game,
+        formattedPrice: formatPrice(game.price)
+      }));
+
+      setGames(processedGames);
       setTotalPages(1);
     } catch (err) {
       console.error('Search error:', err);
-      setError(err.message === 'Failed to fetch' ? 'Unable to connect to the server. Please check your internet connection.' : 'Failed to search games. Please try again.');
+      setError(err.message === 'Failed to fetch' 
+        ? 'Unable to connect to the server. Please check your internet connection.' 
+        : 'Failed to search games. Please try again.');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchGames(currentPage);
+  }, [currentPage]);
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
@@ -90,14 +133,13 @@ export const LandingPage = () => {
       const timeoutId = setTimeout(() => {
         searchGames(value);
       }, 300);
-
       return () => clearTimeout(timeoutId);
     } else {
-      setCurrentPage(1); // Reset to the first page if no query is present
+      setCurrentPage(1);
+      fetchGames(1);
     }
   };
 
-  // Handle page navigation
   const handlePageChange = (direction) => {
     setCurrentPage((prev) => {
       if (direction === "next" && prev < totalPages) {
@@ -107,17 +149,15 @@ export const LandingPage = () => {
       }
       return prev;
     });
-  };  
+  };
 
   return (
     <div className="landing-page">
       <div className='page-container'>
         <div className="header">
+          <User2Icon/>
           <div className="user-profile">
-            <div className="profile-pic">
-              {/* Optional: Add profile picture here if available */}
-            </div>
-            <span className="email">{userEmail}</span> {/* Display user's email */}
+            <span className="email">{userEmail}</span>
           </div>
           <div className="search-container">
             <div className="search-bar">
@@ -134,8 +174,6 @@ export const LandingPage = () => {
               />
             </div>
           </div>
-          {/* Library Button */}
-         
         </div>
         <div className="game-results">
           {games.length === 0 && !loading && query && (
@@ -166,14 +204,13 @@ export const LandingPage = () => {
                     <h2 className="game-name">{game.name}</h2>
                     <div className="game-pricing">
                       <span className="game-price">
-                        {typeof game.price === 'number'
-                          ? game.price > 0
-                            ? `$${game.price.toFixed(2)}`
-                            : 'Free'
-                          : 'Price unavailable'}
+                        {game.formattedPrice}
                       </span>
                       {game.metacritic_score && (
-                        <span className={`game-metacritic ${game.metacritic_score >= 75 ? 'green' : game.metacritic_score >= 50 ? 'yellow' : 'red'}`}>
+                        <span className={`game-metacritic ${
+                          game.metacritic_score >= 75 ? 'green' : 
+                          game.metacritic_score >= 50 ? 'yellow' : 'red'
+                        }`}>
                           {game.metacritic_score}
                         </span>
                       )}

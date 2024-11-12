@@ -298,3 +298,44 @@ button:hover {
   object-fit: contain;
   transition: transform 0.3s ease;
 }
+/* Make sure the purchase button is styled and appears correctly below the image */
+.game-details-container {
+  width: 95%;
+  max-width: 1200px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  padding: 40px;
+  overflow-y: auto;
+  height: 85vh;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  scrollbar-width: thin;
+  scrollbar-color: #1e90ff #f1f1f1;
+}
+
+.buttons {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px; /* Add space below the button */
+}
+
+.purchase-button {
+  background-color: #1e90ff;
+  color: white;
+  padding: 8px 16px; /* Reduce padding for a smaller button */
+  border-radius: 6px; /* Slightly smaller border radius */
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.9rem; /* Smaller font size */
+  transition: all 0.3s ease;
+  width: auto; /* Let the button size adjust to its content */
+  margin: 12px 0; /* Add some margin to space it out a bit */
+}
+
+.purchase-button:hover {
+  background-color: #0056b3;
+}
+
