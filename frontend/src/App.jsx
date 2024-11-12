@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 import HomePage from './HomePage';  // Import HomePage component
 import LandingPage from './LandingPage';  // Import LandingPage component
 import GameDetails from './GameDetails';  // Import GameDetails component
+import Payment from './Payment';  // Import Payment component
+import Library from './Library';  // Import Library component
 
 // Simple authentication check
 const isAuthenticated = () => {
@@ -22,10 +24,7 @@ const App = () => {
         {/* Homepage route (login/signup page) */}
         <Route 
           path="/" 
-          element={
-              // Redirect to games page if already logged in
-            <HomePage />  // Display HomePage for login/signup
-          }
+          element={<HomePage />}  // Display HomePage for login/signup
         />
         
         {/* Search Page */}
@@ -36,6 +35,17 @@ const App = () => {
         
         {/* Game Details Page */}
         <Route path="/game/:appId" element={<GameDetails />} />
+
+        
+
+        {/* Payment Page */}
+        <Route path="/payment" element={<Payment />} />
+
+        {/* Library Page - Protected Route */}
+        <Route 
+          path="/library" 
+          element={<ProtectedRoute element={<Library />} />} 
+        />
       </Routes>
     </Router>
   );

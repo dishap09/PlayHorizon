@@ -7,8 +7,6 @@ const GameDetails = () => {
   const [game, setGame] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [cart, setCart] = useState([]); // Cart state to manage added games
-  const [cartCount, setCartCount] = useState(0); // Cart count to manage the count of items
   const navigate = useNavigate(); // Use useNavigate to get the navigate function
 
   useEffect(() => {
@@ -32,22 +30,9 @@ const GameDetails = () => {
     }
   }, [appId]);
 
-  const handleAddToCart = () => {
-    setCart((prevCart) => {
-      const updatedCart = [...prevCart, game]; // Add the game to the cart
-      return updatedCart;
-    });
-    setCartCount(cartCount + 1); // Increment cart count
-  };
-
   const handlePurchase = () => {
     // Navigate to a payment page
     navigate('/payment'); // You can set this path to the actual payment page
-  };
-
-  const handleViewCart = () => {
-    // Redirect to a cart page
-    navigate('/cart'); // Set this to your cart page route
   };
 
   if (loading) return <p>Loading game details...</p>;
@@ -66,19 +51,9 @@ const GameDetails = () => {
       <p><strong>Positive Reviews:</strong> {game?.positive_reviews}</p>
       <p><strong>Negative Reviews:</strong> {game?.negative_reviews}</p>
 
-      {/* Add to Cart and Purchase buttons */}
+      {/* Purchase button only */}
       <div className="buttons">
-        <button onClick={handleAddToCart} className="add-to-cart-button">Add to Cart</button>
         <button onClick={handlePurchase} className="purchase-button">Purchase</button>
-      </div>
-
-      <div className="cart-icon" onClick={handleViewCart}>
-        <span className="cart-count">{cartCount}</span>
-        <img src="/path/to/cart-icon.png" alt="Cart Icon" />
-      </div>
-
-      <div className="cart-icon">
-        <span className="cart-count">{cartCount}</span>
       </div>
 
       <h3>Developers</h3>

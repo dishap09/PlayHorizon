@@ -383,6 +383,72 @@ app.patch('/api/users/:userId/games/:appId', authenticateToken, async (req, res)
     }
 });
 
+// Get all games with pagination
+app.get('/api/games', async (req, res) => {
+    const { page = 1, pageSize = 10 } = req.query;
+
+    // Convert page and pageSize to integers and handle non-numeric cases
+    const limit = parseInt(pageSize, 10) || 10;
+    const offset = (parseInt(page, 10) - 1) * limit;
+
+    try {
+        const connection = await pool.getConnection();
+
+        try {
+            // Query to get paginated games
+            const [games] = await connection.query(`
+                SELECT 
+                    g.app_id,
+                    g.name,
+                    g.release_date,
+                    g.price,
+                    g.header_image,
+                    g.metacritic_score,
+                    g.positive_reviews,
+                    g.negative_reviews,
+                    g.average_playtime_forever,
+                    GROUP_CONCAT(DISTINCT gen.name) AS genres,
+                    GROUP_CONCAT(DISTINCT dev.name) AS developers
+                FROM games g
+                LEFT JOIN game_genres gg ON g.app_id = gg.app_id
+                LEFT JOIN genres gen ON gg.genre_id = gen.id
+                LEFT JOIN game_developers gd ON g.app_id = gd.app_id
+                LEFT JOIN developers dev ON gd.developer_id = dev.id
+                GROUP BY g.app_id
+                LIMIT ? OFFSET ?
+            `, [limit, offset]);
+
+            // Query to get the total count of games
+            const [[{ totalCount }]] = await connection.query(`SELECT COUNT(*) AS totalCount FROM games`);
+
+            // Calculate total pages based on count and pageSize
+            const totalPages = Math.ceil(totalCount / limit);
+
+            res.json({
+                games: games.map(game => ({
+                    ...game,
+                    genres: game.genres ? game.genres.split(',') : [],
+                    developers: game.developers ? game.developers.split(',') : [],
+                    review_percentage: game.positive_reviews + game.negative_reviews > 0
+                        ? Math.round((game.positive_reviews / (game.positive_reviews + game.negative_reviews)) * 100)
+                        : null
+                })),
+                pagination: {
+                    currentPage: parseInt(page, 10),
+                    pageSize: limit,
+                    totalCount,
+                    totalPages
+                }
+            });
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        console.error('Error fetching paginated games:', error);
+        res.status(500).json({ error: 'Failed to fetch games' });
+    }
+});
+
 app.get('/api/games/search', async (req, res) => {
     const { query } = req.query;
     
