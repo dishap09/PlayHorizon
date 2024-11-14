@@ -1,0 +1,130 @@
+/* Container styling */
+.trending-games-container {
+  max-width: 100%; /* Full width for smaller screens */
+  width: 600px; /* Adjust the width for medium screens */
+  margin: auto;
+  background-color: #ffffff;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  padding: 1.5rem; /* Add padding for a better layout */
+}
+
+@media (min-width: 768px) {
+  .trending-games-container {
+    width: 768px; /* Larger width for tablet screens */
+  }
+}
+
+@media (min-width: 1024px) {
+  .trending-games-container {
+    width: 1024px; /* Original width for larger screens */
+  }
+}
+
+
+/* Header styling */
+.trending-games-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.trending-games-header h2 {
+  font-size: 1.875rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+margin-left: 300px;
+}
+
+/* Scrollable content area */
+.trending-games-content {
+  padding: 1.5rem;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.trending-games-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.trending-games-content::-webkit-scrollbar-thumb {
+  background-color: #a0aec0;
+  border-radius: 4px;
+}
+
+/* Individual game card styling */
+.game-card {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background-color: #f7fafc;
+  transition: background-color 0.2s ease-in-out;
+  max-width: 100%;
+    width: 900px;
+    height: 300px;
+
+}
+
+.game-card:hover {
+  background-color: #edf2f7;
+}
+
+/* Game image styling */
+.game-image {
+  width: 8rem;
+  height: 4rem;
+  object-fit: cover;
+  border-radius: 0.25rem;
+}
+
+/* Game details styling */
+.game-details {
+  flex: 1;
+}
+
+.game-title {
+  font-weight: 600;
+  font-size: 1.125rem;
+  align-items: center ;
+}
+
+.game-info {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #4a5568;
+}
+
+.game-info .icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.game-genres {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.game-genre-badge {
+  padding: 0.25rem 0.5rem;
+  background-color: #ebf8ff;
+  color: #3182ce;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.game-release-info {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #718096;
+}

@@ -239,150 +239,6 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// Get user's game library
-app.get('/api/users/:userId/games', authenticateToken, async (req, res) => {
-    const { userId } = req.params;
-
-    if (parseInt(userId) !== req.user.userId) {
-        return res.status(403).json({ error: 'Unauthorized access' });
-    }
-
-    try {
-        const connection = await pool.getConnection();
-        
-        try {
-            const [games] = await connection.query(`
-                SELECT g.*, ug.playtime_minutes, ug.last_played, ug.added_at
-                FROM games g
-                JOIN user_games ug ON g.app_id = ug.app_id
-                WHERE ug.user_id = ?
-                ORDER BY ug.added_at DESC
-            `, [userId]);
-
-            res.json({ games });
-        } finally {
-            connection.release();
-        }
-    } catch (error) {
-        console.error('Error fetching user games:', error);
-        res.status(500).json({ error: 'Failed to fetch games' });
-    }
-});
-
-// Add game to user's library
-app.post('/api/users/:userId/games', authenticateToken, async (req, res) => {
-    const { userId } = req.params;
-    const { appId } = req.body;
-
-    if (parseInt(userId) !== req.user.userId) {
-        return res.status(403).json({ error: 'Unauthorized access' });
-    }
-
-    try {
-        const connection = await pool.getConnection();
-        
-        try {
-            await connection.beginTransaction();
-
-            const [games] = await connection.query(
-                'SELECT app_id FROM games WHERE app_id = ?',
-                [appId]
-            );
-
-            if (games.length === 0) {
-                await connection.rollback();
-                return res.status(404).json({ error: 'Game not found' });
-            }
-
-            await connection.query(
-                'INSERT INTO user_games (user_id, app_id) VALUES (?, ?)',
-                [userId, appId]
-            );
-
-            await connection.commit();
-            
-            res.status(201).json({ message: 'Game added to library' });
-        } catch (error) {
-            await connection.rollback();
-            
-            if (error.code === 'ER_DUP_ENTRY') {
-                res.status(400).json({ error: 'Game already in library' });
-            } else {
-                throw error;
-            }
-        } finally {
-            connection.release();
-        }
-    } catch (error) {
-        console.error('Error adding game to library:', error);
-        res.status(500).json({ error: 'Failed to add game' });
-    }
-});
-
-// Remove game from user's library
-app.delete('/api/users/:userId/games/:appId', authenticateToken, async (req, res) => {
-    const { userId, appId } = req.params;
-
-    if (parseInt(userId) !== req.user.userId) {
-        return res.status(403).json({ error: 'Unauthorized access' });
-    }
-
-    try {
-        const connection = await pool.getConnection();
-        
-        try {
-            const [result] = await connection.query(
-                'DELETE FROM user_games WHERE user_id = ? AND app_id = ?',
-                [userId, appId]
-            );
-
-            if (result.affectedRows === 0) {
-                return res.status(404).json({ error: 'Game not found in library' });
-            }
-
-            res.json({ message: 'Game removed from library' });
-        } finally {
-            connection.release();
-        }
-    } catch (error) {
-        console.error('Error removing game from library:', error);
-        res.status(500).json({ error: 'Failed to remove game' });
-    }
-});
-
-// Update game playtime
-app.patch('/api/users/:userId/games/:appId', authenticateToken, async (req, res) => {
-    const { userId, appId } = req.params;
-    const { playtimeMinutes } = req.body;
-
-    if (parseInt(userId) !== req.user.userId) {
-        return res.status(403).json({ error: 'Unauthorized access' });
-    }
-
-    try {
-        const connection = await pool.getConnection();
-        
-        try {
-            const [result] = await connection.query(`
-                UPDATE user_games 
-                SET playtime_minutes = ?, last_played = CURRENT_TIMESTAMP
-                WHERE user_id = ? AND app_id = ?
-            `, [playtimeMinutes, userId, appId]);
-
-            if (result.affectedRows === 0) {
-                return res.status(404).json({ error: 'Game not found in library' });
-            }
-
-            res.json({ message: 'Playtime updated successfully' });
-        } finally {
-            connection.release();
-        }
-    } catch (error) {
-        console.error('Error updating playtime:', error);
-        res.status(500).json({ error: 'Failed to update playtime' });
-    }
-});
-
 // Get all games with pagination
 app.get('/api/games', async (req, res) => {
     const { page = 1, pageSize = 10 } = req.query;
@@ -925,6 +781,66 @@ app.get('/api/users/me', authenticateToken, async (req, res) => {
     }
 });
 
+// Trending games endpoint that combines multiple factors
+app.get('/api/trending', async (req, res) => {
+    try {
+        const connection = await pool.getConnection();
+        
+        try {
+            const [trendingGames] = await connection.query(`
+SELECT 
+    g.app_id,
+    g.name,
+    g.header_image,
+    g.release_date,
+    g.price,
+    g.metacritic_score,
+    g.positive_reviews,
+    g.negative_reviews,
+    g.average_playtime_forever,
+    GROUP_CONCAT(DISTINCT gen.name) as genres,
+    (
+        (COALESCE(g.metacritic_score, 0) / 100) * 0.25 +  
+        (CASE 
+            WHEN (g.positive_reviews + g.negative_reviews) = 0 THEN 0
+            ELSE CAST(g.positive_reviews AS DECIMAL(10,2)) / (g.positive_reviews + g.negative_reviews)
+        END * 0.35) +  
+        (LEAST(g.average_playtime_forever / 3000, 1) * 0.25) +
+        (LEAST(DATEDIFF(CURRENT_DATE, g.release_date) / 365, 1) * -0.15)  -- Recent games get higher scores
+    ) as trending_score
+FROM games g
+LEFT JOIN game_genres gg ON g.app_id = gg.app_id
+LEFT JOIN genres gen ON gg.genre_id = gen.id
+WHERE 
+    g.release_date >= '2000-01-01'  -- Include all games since 2000
+    AND (g.positive_reviews + g.negative_reviews) > 5  -- Minimum reviews requirement
+GROUP BY g.app_id
+HAVING trending_score > 0  -- Minimum trending score threshold
+ORDER BY trending_score DESC
+LIMIT 10;
+            `);
+
+            // Log the number of games fetched and the full endpoint
+            console.log(`Fetched ${trendingGames.length} games from endpoint: ${req.protocol}://${req.get('host')}${req.originalUrl}`);
+
+            res.json(trendingGames.map(game => ({
+                ...game,
+                genres: game.genres ? game.genres.split(',') : [],
+                review_score: game.positive_reviews + game.negative_reviews > 0
+                    ? Math.round((game.positive_reviews / (game.positive_reviews + game.negative_reviews)) * 100)
+                    : null,
+                playtime_hours: Math.round(game.average_playtime_forever / 60),
+                trending_score: Math.round(game.trending_score * 100)
+            })));
+
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        console.error('Error fetching trending games:', error);
+        res.status(500).json({ error: 'Failed to fetch trending games' });
+    }
+});
 
 
 // Start server
