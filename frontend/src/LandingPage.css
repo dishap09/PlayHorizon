@@ -1,3 +1,4 @@
+
 /* Landing Page Styling */
 .landing-page {
   font-family: 'Arial', sans-serif;
@@ -312,4 +313,38 @@
   font-size: 16px;
 }
 
+/* Add these styles to your existing LandingPage.css */
 
+.nav-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-left: auto;
+  padding-right: 1rem;
+}
+
+.nav-button {
+  padding: 0.5rem 1rem;
+  background-color: #000000;
+  color: white;
+  border-radius: 0.375rem;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.nav-button:hover {
+  background-color: #2d3748;
+}
+
+/* Update header styles if needed */
+.header {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  gap: 1rem;
+}
+
+.no-results{
+  color: rgb(255, 255, 255);
+  text-align: center;
+}

@@ -128,8 +128,10 @@ const FilterGenre = () => {
   };
 
   return (
+   
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6 flex flex-wrap gap-4">
+ <h1>Filter By Genre </h1> 
         <select
           className="p-2 border rounded"
           value={selectedGenre}
@@ -144,25 +146,8 @@ const FilterGenre = () => {
         </select>
 
         <div className="flex items-center gap-2">
-          <input
-            type="number"
-            name="min"
-            min="0"
-            max="100"
-            value={priceRange.min}
-            onChange={handlePriceChange}
-            className="p-2 border rounded w-24"
-          />
-          <span>to</span>
-          <input
-            type="number"
-            name="max"
-            min="0"
-            max="100"
-            value={priceRange.max}
-            onChange={handlePriceChange}
-            className="p-2 border rounded w-24"
-          />
+          
+         
         </div>
       </div>
 

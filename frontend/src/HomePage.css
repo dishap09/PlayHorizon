@@ -83,20 +83,21 @@ body {
     justify-content: center;
     align-items: center;
     margin-bottom: 2rem;
+
   }
   
   .home-header h1 {
     font-size: 4rem;
     font-weight: 900;
     letter-spacing: -0.05em;
-    color:black
+    color:rgb(255, 255, 255)
   }
   .home-header p {
     color: white;
   }
   .home-header .icon {
     margin-right: 1rem;
-    color: white;
+    color: rgb(85, 228, 109);
   }
   
   .home-description {
@@ -265,3 +266,7 @@ body {
       padding: 1.5rem;
     }
   }
+
+.home-description{
+  color:#ffffff;
+}

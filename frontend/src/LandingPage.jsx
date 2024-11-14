@@ -4,26 +4,20 @@ import { Link } from 'react-router-dom';
 import './LandingPage.css';
 
 const formatPrice = (price) => {
-  // Handle empty strings, null, and undefined
   if (price === '' || price === null || price === undefined) {
     return 'Price unavailable';
   }
   
-  // If price is already a number, use it directly
-  // Otherwise, try to convert from string
   const numericPrice = typeof price === 'number' ? price : parseFloat(price);
   
-  // Check if conversion was successful
   if (isNaN(numericPrice)) {
     return 'Price unavailable';
   }
   
-  // Handle free games
   if (numericPrice === 0) {
     return 'Free';
   }
   
-  // Format price with 2 decimal places
   return `$${numericPrice.toFixed(2)}`;
 };
 
@@ -59,7 +53,6 @@ export const LandingPage = () => {
 
       const totalPagesCount = Math.ceil(data.pagination.totalCount / 24);
 
-      // Process games data to ensure consistent price format
       const processedGames = data.games.map(game => ({
         ...game,
         formattedPrice: formatPrice(game.price)
@@ -104,7 +97,6 @@ export const LandingPage = () => {
         throw new Error('Invalid response format');
       }
 
-      // Process search results to ensure consistent price format
       const processedGames = data.games.map(game => ({
         ...game,
         formattedPrice: formatPrice(game.price)
@@ -173,6 +165,14 @@ export const LandingPage = () => {
                 aria-label="Search games"
               />
             </div>
+          </div>
+          <div className="nav-buttons">
+            <Link to="/trending" className="nav-button">
+              Trends
+            </Link>
+            <Link to="/filter_genre" className="nav-button">
+              Filter
+            </Link>
           </div>
         </div>
         <div className="game-results">
