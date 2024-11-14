@@ -1,212 +1,284 @@
 import pymysql
-from typing import Optional
+from typing import Optional, Dict, List, Any
+import logging
+from datetime import datetime
 
-# Database configuration
-DB_CONFIG = {
-    "charset": "utf8mb4",
-    "connect_timeout": 10,
-    "cursorclass": pymysql.cursors.DictCursor,
-    "db": "defaultdb",
-    "host": "mysql-404e161-playhorizon.j.aivencloud.com",
-    "password": "AVNS_yzYNBDWOUm1nQnP2xwP",
-    "port": 16511,
-    "user": "avnadmin",
-    "write_timeout": 10,
-}
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
-def execute_sql(sql: str, connection: Optional[pymysql.Connection] = None, delimiter: str = ";") -> bool:
-    """Execute SQL statement with error handling and custom delimiter support"""
-    close_connection = False
-    try:
-        if connection is None:
-            connection = pymysql.connect(**DB_CONFIG)
-            close_connection = True
+class DatabaseConfig:
+    """Database configuration class"""
+    DEFAULT_CONFIG = {
+        "charset": "utf8mb4",
+        "connect_timeout": 10,
+        "cursorclass": pymysql.cursors.DictCursor,
+        "db": "defaultdb",
+        "host": "mysql-404e161-playhorizon.j.aivencloud.com",
+        "password": "AVNS_yzYNBDWOUm1nQnP2xwP",
+        "port": 16511,
+        "user": "avnadmin",
+        "write_timeout": 10,
+    }
+
+class DatabaseManager:
+    """Database connection and operation manager"""
+    def __init__(self, config: Dict[str, Any] = None):
+        self.config = config or DatabaseConfig.DEFAULT_CONFIG
+
+    def get_connection(self) -> pymysql.Connection:
+        """Create and return a database connection"""
+        try:
+            return pymysql.connect(**self.config)
+        except Exception as e:
+            logger.error(f"Failed to connect to database: {e}")
+            raise
+
+    def execute_sql(self, sql: str, params: tuple = None) -> bool:
+        """Execute SQL statement with error handling"""
+        connection = None
+        try:
+            connection = self.get_connection()
+            with connection.cursor() as cursor:
+                cursor.execute(sql, params)
+                connection.commit()
+            return True
+        except Exception as e:
+            logger.error(f"Error executing SQL: {e}")
+            if connection:
+                connection.rollback()
+            return False
+        finally:
+            if connection:
+                connection.close()
+
+    def execute_many(self, statements: List[str]) -> bool:
+        """Execute multiple SQL statements in sequence"""
+        connection = None
+        try:
+            connection = self.get_connection()
+            with connection.cursor() as cursor:
+                for sql in statements:
+                    if sql.strip():
+                        cursor.execute(sql)
+                connection.commit()
+            return True
+        except Exception as e:
+            logger.error(f"Error executing multiple SQL statements: {e}")
+            if connection:
+                connection.rollback()
+            return False
+        finally:
+            if connection:
+                connection.close()
+
+class PriceTracker:
+    """Handle price tracking operations"""
+    def __init__(self, db_manager: DatabaseManager):
+        self.db_manager = db_manager
+
+    def setup_database(self) -> bool:
+        """Set up all necessary database objects"""
+        try:
+            # Drop existing objects
+            self._drop_existing_objects()
             
-        with connection.cursor() as cursor:
-            statements = sql.split(delimiter)
-            for statement in statements:
-                if statement.strip():
-                    cursor.execute(statement)
-            connection.commit()
-        return True
-    except Exception as e:
-        print(f"Error executing SQL: {e}")
-        return False
-    finally:
-        if close_connection and connection:
-            connection.close()
+            # Create new objects
+            success = all([
+                self._create_price_history_table(),
+                self._create_genre_procedure(),
+                self._create_get_genres_procedure(),
+                self._create_price_trigger()
+            ])
+            
+            if success:
+                logger.info("Successfully set up price tracking system")
+            return success
+        except Exception as e:
+            logger.error(f"Failed to set up price tracking system: {e}")
+            return False
 
-def setup_procedures_and_triggers():
-    """Set up stored procedures and triggers for game-related operations"""
-    # Drop existing procedures and triggers
-    drop_statements = """
-    DROP PROCEDURE IF EXISTS CalculateGameMetrics;
-    DROP PROCEDURE IF EXISTS UpdateGameCategories;
-    DROP TRIGGER IF EXISTS ValidateGameMetacriticScore;
-    DROP TRIGGER IF EXISTS UpdateGameTimestamp;
-    """
-
-    # Create CalculateGameMetrics procedure
-    calculate_game_metrics = """
-    DELIMITER //
-    CREATE PROCEDURE CalculateGameMetrics(IN game_app_id BIGINT)
-    BEGIN
-        DECLARE avg_metacritic DECIMAL(5,2);
-        DECLARE total_achievements INT;
-        DECLARE genre_count INT;
-        
-        -- Calculate average metacritic score for similar games in same genres
-        SELECT AVG(g.metacritic_score) INTO avg_metacritic
-        FROM games g
-        JOIN game_genres gg1 ON g.app_id = gg1.app_id
-        WHERE gg1.genre_id IN (
-            SELECT genre_id 
-            FROM game_genres 
-            WHERE app_id = game_app_id
-        )
-        AND g.app_id != game_app_id
-        AND g.metacritic_score IS NOT NULL;
-        
-        -- Count total achievements and genres
-        SELECT achievements INTO total_achievements
-        FROM games WHERE app_id = game_app_id;
-        
-        SELECT COUNT(*) INTO genre_count
-        FROM game_genres
-        WHERE app_id = game_app_id;
-        
-        -- Return the metrics
-        SELECT 
-            game_app_id AS app_id,
-            avg_metacritic AS average_genre_metacritic,
-            total_achievements AS achievement_count,
-            genre_count AS number_of_genres;
-    END //
-    DELIMITER ;
-    """
-
-    # Create UpdateGameCategories procedure
-    update_game_categories = """
-    DELIMITER //
-    CREATE PROCEDURE UpdateGameCategories(
-        IN game_app_id BIGINT,
-        IN category_names VARCHAR(1000)
-    )
-    BEGIN
-        -- First, remove existing categories for the game
-        DELETE FROM game_categories 
-        WHERE app_id = game_app_id;
-        
-        -- Insert new categories
-        INSERT INTO game_categories (app_id, category_id)
-        SELECT 
-            game_app_id,
-            c.id
-        FROM categories c
-        WHERE FIND_IN_SET(c.name, category_names) > 0;
-        
-        -- Return updated categories for the game
-        SELECT c.name
-        FROM categories c
-        JOIN game_categories gc ON c.id = gc.category_id
-        WHERE gc.app_id = game_app_id;
-    END //
-    DELIMITER ;
-    """
-
-    # Create ValidateGameMetacriticScore trigger
-    validate_metacritic_trigger = """
-    DELIMITER //
-    CREATE TRIGGER ValidateGameMetacriticScore
-    BEFORE INSERT ON games
-    FOR EACH ROW
-    BEGIN
-        IF NEW.metacritic_score IS NOT NULL AND (NEW.metacritic_score < 0 OR NEW.metacritic_score > 100) THEN
-            SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Metacritic score must be between 0 and 100';
-        END IF;
-    END //
-    DELIMITER ;
-    """
-
-    # Create UpdateGameTimestamp trigger
-    update_timestamp_trigger = """
-    DELIMITER //
-    CREATE TRIGGER UpdateGameTimestamp
-    BEFORE UPDATE ON games
-    FOR EACH ROW
-    BEGIN
-        -- Add an audit trail for price changes
-        IF NEW.price != OLD.price THEN
-            SET NEW.notes = CONCAT(
-                COALESCE(OLD.notes, ''),
-                '\nPrice changed from ',
-                COALESCE(OLD.price, 'NULL'),
-                ' to ',
-                COALESCE(NEW.price, 'NULL'),
-                ' on ',
-                NOW()
-            );
-        END IF;
-    END //
-    DELIMITER ;
-    """
-
-    # Execute all statements
-    connection = pymysql.connect(**DB_CONFIG)
-    try:
-        # Drop existing objects
-        execute_sql(drop_statements, connection)
-        
-        # Create new procedures and triggers
-        procedures_and_triggers = [
-            calculate_game_metrics,
-            update_game_categories,
-            validate_metacritic_trigger,
-            update_timestamp_trigger
+    def _drop_existing_objects(self) -> bool:
+        """Drop existing database objects"""
+        statements = [
+            "DROP PROCEDURE IF EXISTS GetGamesByGenre",
+            "DROP PROCEDURE IF EXISTS GetGenres",
+            "DROP TRIGGER IF EXISTS game_price_change",
+            "DROP TABLE IF EXISTS game_price_history"
         ]
-        
-        for sql in procedures_and_triggers:
-            parts = sql.split('DELIMITER //')
-            if len(parts) > 1:
-                main_sql = parts[1].split('DELIMITER ;')[0]
-                execute_sql(main_sql, connection, delimiter="//")
-            
-        print("Successfully created all procedures and triggers")
-        return True
-    except Exception as e:
-        print(f"Error setting up procedures and triggers: {e}")
-        return False
-    finally:
-        connection.close()
+        return self.db_manager.execute_many(statements)
 
-def test_procedures():
-    """Test the created procedures"""
-    try:
-        connection = pymysql.connect(**DB_CONFIG)
-        with connection.cursor() as cursor:
-            # Test CalculateGameMetrics
-            print("Testing CalculateGameMetrics...")
-            cursor.execute("CALL CalculateGameMetrics(570)")  # Example game_app_id
-            result = cursor.fetchone()
-            print("Game metrics:", result)
+    def _create_price_history_table(self) -> bool:
+        """Create price history table"""
+        sql = """
+        CREATE TABLE IF NOT EXISTS game_price_history (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            app_id BIGINT,
+            old_price DECIMAL(10,2),
+            new_price DECIMAL(10,2),
+            change_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (app_id) REFERENCES games(app_id)
+        )
+        """
+        return self.db_manager.execute_sql(sql)
+
+    def _create_genre_procedure(self) -> bool:
+        """Create GetGamesByGenre procedure with pagination"""
+        sql = """
+        CREATE PROCEDURE GetGamesByGenre(
+            IN p_genre VARCHAR(255),
+            IN p_min_price DECIMAL(10,2),
+            IN p_max_price DECIMAL(10,2),
+            IN p_page INT,
+            IN p_page_size INT
+        )
+        BEGIN
+            DECLARE offset_val INT;
+            SET offset_val = (p_page - 1) * p_page_size;
             
-            # Test UpdateGameCategories
-            print("\nTesting UpdateGameCategories...")
-            cursor.execute("CALL UpdateGameCategories(570, 'Multi-player,Single-player')")
-            result = cursor.fetchall()
-            print("Updated categories:", result)
+            SELECT COUNT(DISTINCT g.app_id) INTO @total_count
+            FROM games g
+            LEFT JOIN game_genres gg ON g.app_id = gg.app_id
+            LEFT JOIN genres gen ON gg.genre_id = gen.id
+            WHERE (p_genre = '' OR gen.name = p_genre)
+            AND (g.price >= p_min_price OR g.price IS NULL)
+            AND (g.price <= p_max_price OR g.price IS NULL);
             
-        print("\nSuccessfully tested procedures")
-        return True
-    except Exception as e:
-        print(f"Error testing procedures: {e}")
-        return False
-    finally:
-        connection.close()
+            SET @total_pages = CEIL(@total_count / p_page_size);
+            
+            SELECT 
+                g.*,
+                GROUP_CONCAT(DISTINCT gen.name) as genres
+            FROM games g
+            LEFT JOIN game_genres gg ON g.app_id = gg.app_id
+            LEFT JOIN genres gen ON gg.genre_id = gen.id
+            WHERE (p_genre = '' OR gen.name = p_genre)
+            AND (g.price >= p_min_price OR g.price IS NULL)
+            AND (g.price <= p_max_price OR g.price IS NULL)
+            GROUP BY g.app_id
+            ORDER BY g.name
+            LIMIT p_page_size OFFSET offset_val;
+            
+            SELECT @total_count as totalCount, 
+                   p_page as currentPage, 
+                   @total_pages as totalPages, 
+                   p_page_size as pageSize;
+        END
+        """
+        return self.db_manager.execute_sql(sql)
+
+    def _create_get_genres_procedure(self) -> bool:
+        """Create GetGenres procedure"""
+        sql = """
+        CREATE PROCEDURE GetGenres()
+        BEGIN
+            SELECT DISTINCT 
+                g.id,
+                g.name
+            FROM genres g
+            INNER JOIN game_genres gg ON g.id = gg.genre_id
+            ORDER BY g.name ASC;
+        END
+        """
+        return self.db_manager.execute_sql(sql)
+
+    def _create_price_trigger(self) -> bool:
+        """Create price change trigger"""
+        sql = """
+        CREATE TRIGGER game_price_change
+        BEFORE UPDATE ON games
+        FOR EACH ROW
+        BEGIN
+            IF NEW.price != OLD.price THEN
+                INSERT INTO game_price_history (app_id, old_price, new_price)
+                VALUES (OLD.app_id, OLD.price, NEW.price);
+            END IF;
+        END
+        """
+        return self.db_manager.execute_sql(sql)
+
+    def get_games_by_genre(self, genre: str, min_price: float, max_price: float, page: int, page_size: int) -> Dict[str, Any]:
+        """Get games by genre with pagination"""
+        connection = None
+        try:
+            connection = self.db_manager.get_connection()
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "CALL GetGamesByGenre(%s, %s, %s, %s, %s)",
+                    (genre, min_price, max_price, page, page_size)
+                )
+                games = cursor.fetchall()
+                cursor.nextset()  # Move to the next result set
+                pagination = cursor.fetchone()
+                
+                return {
+                    'games': games,
+                    'pagination': pagination
+                }
+        except Exception as e:
+            logger.error(f"Error getting games by genre: {e}")
+            return {'games': [], 'pagination': None}
+        finally:
+            if connection:
+                connection.close()
+
+    def test_price_tracking(self) -> Dict[str, Any]:
+        """Test the price tracking functionality and return results"""
+        connection = None
+        try:
+            connection = self.db_manager.get_connection()
+            results = {}
+            
+            # Test GetGamesByGenre
+            results.update(self.get_games_by_genre('Action', 0, 50, 1, 10))
+            
+            # Test GetGenres
+            with connection.cursor() as cursor:
+                cursor.execute("CALL GetGenres()")
+                results['genres'] = cursor.fetchall()
+                
+                # Test price change tracking
+                cursor.execute("""
+                    UPDATE games 
+                    SET price = price + 5 
+                    WHERE app_id = 570 
+                    LIMIT 1
+                """)
+                
+                cursor.execute("""
+                    SELECT * FROM game_price_history 
+                    WHERE app_id = 570 
+                    ORDER BY change_date DESC 
+                    LIMIT 1
+                """)
+                results['price_change'] = cursor.fetchone()
+            
+            connection.commit()
+            logger.info("Successfully tested price tracking functionality")
+            return results
+            
+        except Exception as e:
+            logger.error(f"Error testing price tracking: {e}")
+            if connection:
+                connection.rollback()
+            return {}
+        finally:
+            if connection:
+                connection.close()
+
+def main():
+    """Main function to set up and test the price tracking system"""
+    db_manager = DatabaseManager()
+    price_tracker = PriceTracker(db_manager)
+    
+    if price_tracker.setup_database():
+        results = price_tracker.test_price_tracking()
+        logger.info(f"Test results: {results}")
+    else:
+        logger.error("Failed to set up price tracking")
 
 if __name__ == "__main__":
-    if setup_procedures_and_triggers():
-        test_procedures()
-    else:
-        print("Failed to set up procedures and triggers")
+    main()

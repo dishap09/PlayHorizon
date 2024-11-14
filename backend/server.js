@@ -718,15 +718,23 @@ app.delete('/api/games/:appId', authenticateToken, isAdmin, async (req, res) => 
         try {
             await connection.beginTransaction();
 
-            // Delete from all related tables first
-            await connection.query('DELETE FROM game_categories WHERE app_id = ?', [appId]);
-            await connection.query('DELETE FROM game_developers WHERE app_id = ?', [appId]);
-            await connection.query('DELETE FROM game_publishers WHERE app_id = ?', [appId]);
-            await connection.query('DELETE FROM game_genres WHERE app_id = ?', [appId]);
-            await connection.query('DELETE FROM game_tags WHERE app_id = ?', [appId]);
-            await connection.query('DELETE FROM screenshots WHERE app_id = ?', [appId]);
-            await connection.query('DELETE FROM movies WHERE app_id = ?', [appId]);
-            await connection.query('DELETE FROM user_games WHERE app_id = ?', [appId]);
+            // Delete from all related tables first (including price history)
+            const relatedTables = [
+                'game_price_history',
+                'game_categories',
+                'game_developers',
+                'game_publishers',
+                'game_genres',
+                'game_tags',
+                'screenshots',
+                'movies',
+                'user_games'
+            ];
+
+            // Delete from all related tables
+            for (const table of relatedTables) {
+                await connection.query(`DELETE FROM ${table} WHERE app_id = ?`, [appId]);
+            }
 
             // Finally, delete the game itself
             const [result] = await connection.query(
@@ -839,6 +847,73 @@ LIMIT 10;
     } catch (error) {
         console.error('Error fetching trending games:', error);
         res.status(500).json({ error: 'Failed to fetch trending games' });
+    }
+});
+// Updated endpoint to include pagination parameters
+app.get('/api/by-genre', async (req, res) => {
+    const { 
+        genre = '', 
+        minPrice = 0, 
+        maxPrice = 100,
+        page = 1,
+        pageSize = 20
+    } = req.query;
+    
+    try {
+        const connection = await pool.getConnection();
+        try {
+            // Call the stored procedure with all required parameters
+            const [results] = await connection.query(
+                'CALL GetGamesByGenre(?, ?, ?, ?, ?)',
+                [genre, minPrice, maxPrice, page, pageSize]
+            );
+
+            // The procedure returns two result sets:
+            // 1. The games data
+            // 2. The pagination information
+            const games = results[0];
+            const paginationInfo = results[1]?.[0];
+
+            // Set pagination headers
+            if (paginationInfo) {
+                res.set({
+                    'X-Total-Count': paginationInfo.totalCount,
+                    'X-Current-Page': paginationInfo.currentPage,
+                    'X-Total-Pages': paginationInfo.totalPages,
+                    'X-Page-Size': paginationInfo.pageSize
+                });
+            }
+
+            res.json(games);
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ error: 'Failed to fetch games' });
+    }
+});
+
+// The genres endpoint is working correctly, so we can keep it as is
+app.get('/api/genres', async (req, res) => {
+    try {
+        const connection = await pool.getConnection();
+        try {
+            const [genres] = await connection.query(`
+                SELECT DISTINCT g.id, g.name 
+                FROM genres g
+                INNER JOIN game_genres gg ON g.id = gg.genre_id
+                ORDER BY g.name ASC
+            `);
+            
+            console.log('Fetched genres:', genres);
+            res.json(genres);
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ error: 'Failed to fetch genres' });
     }
 });
 

@@ -6,6 +6,8 @@ import GameDetails from './GameDetails';
 import Payment from './Payment';
 import Library from './Library';
 import GameStore from './GameManagement';
+import TrendingGames from './TrendingGames';
+import FilterGenre from './FilterGenre';
 
 // Authentication check
 const isAuthenticated = () => {
@@ -113,6 +115,8 @@ const App = () => {
         <Route path="/" element={<HomePage />} />
         <Route path="/search" element={<LandingPage />} />
         <Route path="/game/:appId" element={<GameDetails />} />
+        <Route path="/trending" element={<TrendingGames />} />
+        <Route path="/filter_genre" element={<FilterGenre />} />
         
         {/* Protected Routes - Require Authentication */}
         <Route path="/payment" element={<ProtectedRoute element={<Payment />} />} />
