@@ -6,19 +6,24 @@ import ast
 from tqdm import tqdm
 import pandas as pd
 import json
+from dotenv import load_dotenv
+import os
 
-# Database connection configuration
+
+# Database configuration
+load_dotenv()  # Load variables from .env
+
 DB_CONFIG = {
-    "charset": "utf8mb4",
-    "connect_timeout": 10,
-    "cursorclass": pymysql.cursors.DictCursor,
-    "db": "defaultdb",
-    "host": "mysql-404e161-playhorizon.j.aivencloud.com",
-    "password": "AVNS_yzYNBDWOUm1nQnP2xwP",
-    "read_timeout": 10,
-    "port": 16511,
-    "user": "avnadmin",
-    "write_timeout": 10,
+    "charset": os.getenv("DB_CHARSET", "utf8mb4"),
+    "connect_timeout": int(os.getenv("DB_CONNECT_TIMEOUT", 10)),
+    "cursorclass": eval(os.getenv("DB_CURSOR_CLASS", "pymysql.cursors.DictCursor")),
+    "db": os.getenv("DB_NAME", "defaultdb"),
+    "host": os.getenv("DB_HOST", "localhost"),
+    "password": os.getenv("DB_PASSWORD"),
+    "read_timeout": int(os.getenv("DB_READ_TIMEOUT", 10)),
+    "port": int(os.getenv("DB_PORT", 3306)),
+    "user": os.getenv("DB_USER"),
+    "write_timeout": int(os.getenv("DB_WRITE_TIMEOUT", 10)),
 }
 
 def create_database_schema(connection):

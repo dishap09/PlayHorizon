@@ -2,6 +2,10 @@ import pymysql
 from typing import Optional, Dict, List, Any
 import logging
 from datetime import datetime
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(
@@ -13,15 +17,16 @@ logger = logging.getLogger(__name__)
 class DatabaseConfig:
     """Database configuration class"""
     DEFAULT_CONFIG = {
-        "charset": "utf8mb4",
-        "connect_timeout": 10,
-        "cursorclass": pymysql.cursors.DictCursor,
-        "db": "defaultdb",
-        "host": "mysql-404e161-playhorizon.j.aivencloud.com",
-        "password": "AVNS_yzYNBDWOUm1nQnP2xwP",
-        "port": 16511,
-        "user": "avnadmin",
-        "write_timeout": 10,
+        "charset": os.getenv("DB_CHARSET", "utf8mb4"),
+        "connect_timeout": int(os.getenv("DB_CONNECT_TIMEOUT", 10)),
+        "cursorclass": eval(os.getenv("DB_CURSOR_CLASS", "pymysql.cursors.DictCursor")),
+        "db": os.getenv("DB_NAME", "defaultdb"),
+        "host": os.getenv("DB_HOST", "localhost"),
+        "password": os.getenv("DB_PASSWORD"),
+        "read_timeout": int(os.getenv("DB_READ_TIMEOUT", 10)),
+        "port": int(os.getenv("DB_PORT", 3306)),
+        "user": os.getenv("DB_USER"),
+        "write_timeout": int(os.getenv("DB_WRITE_TIMEOUT", 10)),
     }
 
 class DatabaseManager:

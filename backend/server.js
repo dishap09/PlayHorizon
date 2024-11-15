@@ -17,13 +17,13 @@ app.use(express.json());
 
 // Database configuration
 const dbConfig = {
-    host: 'mysql-404e161-playhorizon.j.aivencloud.com',
-    port: 16511,
-    user: 'avnadmin',
-    password: 'AVNS_yzYNBDWOUm1nQnP2xwP',
-    database: 'defaultdb',
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
     ssl: {
-        rejectUnauthorized: false
+        rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED === 'true'
     }
 };
 
